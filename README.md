@@ -100,8 +100,6 @@ Json data row sample:
   ```
 
 
-## Data Profiling
-
 
 
 ## Dimensional model
@@ -138,13 +136,120 @@ The resulting dimensional model for the dataset after analysis is depicted below
 
 ## Data dictionary for dimension and fact tables
 
+### Calendar_dim table
+
+| Attribute name    | Required | Type    | Description                                                         |
+|-------------------|----------|---------|---------------------------------------------------------------------|
+| date_key          | yes      | integer | Integer representing the date in the yyyymmdd format                |
+| full_date         | yes      | date    | Date saved as date type in the format yyyy-MM-dd                    |
+| day_num_in_month  | yes      | integer | Integer representing the day of the month for the date              |
+| day_name          | yes      | string  | Descriptive day name                                                |
+| week_num_in_year  | yes      | integer | Number of the week of the year                                      |
+| month             | yes      | integer | Number of the month                                                 |
+| month_name        | yes      | string  | Calendar month name                                                 |
+| quarter           | yes      | integer | Quater of the year                                                  |
+| year              | yes      | integer | year number                                                         |
+| month_end_flag    | yes      | string  | String that takes “month end” or “not month end” descriptive values |
+| same_day_year_ago | yes      | date    | Date of the same day but from one year before actual row date       |
+
+### Adverts_dim table
+
+| Attribute name  | Required | Type    | Description                                                  |
+|-----------------|----------|---------|--------------------------------------------------------------|
+| key             | yes      | integer | Surrogate sequential integer key of the table                |
+| activeDays      | no       | integer | Number of days active of the job post                        |
+| applyUrl        | no       | string  | URL for websites with further job post description           |
+| publicationDate | yes      | date    | Date of the job post publication                             |
+| status          | yes      | string  | Whether the job post is still “active” or already “inactive” |
 
 
+### Applican_dim table
+
+| Attribute name | Required | Type    | Description                                   |
+|----------------|----------|---------|-----------------------------------------------|
+| key            | yes      | integer | Surrogate sequential integer key of the table |
+| firstName      | no       | string  | First name of the applicant                   |
+| lastName       | no       | string  | Last name of the applicant                    |
+| age            | no       | integer | Age of the applicant                          |
+| age_range      | no       | string  | Age band of the applicant                     |
+
+
+
+### Job_dim table
+
+| Attribute name | Required | Type    | Description                                              |
+|----------------|----------|---------|----------------------------------------------------------|
+| key            | yes      | integer | Surrogate sequential integer key of the table            |
+| job_id         | no       | string  | Natural key representing a unique id for the job post    |
+| city           | no       | string  | City in which the job is located                         |
+| title          | yes      | string  | The title of the job position                            |
+| sector         | no       | string  | Sector to which the job position belongs in the industry |
+
+
+### Benefit_dim table
+
+| Attribute name | Required | Type    | Description                                              |
+|----------------|----------|---------|----------------------------------------------------------|
+| key            | yes      | integer | Surrogate sequential integer key of the table            |
+| benefit_name   | yes      | string  | Description of the benefit offered with the job position |
+
+
+### Skill_dim table
+| Attribute name | Required | Type    | Description                                   |
+|----------------|----------|---------|-----------------------------------------------|
+| key            | yes      | integer | Surrogate sequential integer key of the table |
+| skill_name     | yes      | string  | Name of the skill                             |
+
+
+### Company_dim table
+| Attribute name | Required | Type    | Description                                   |
+|----------------|----------|---------|-----------------------------------------------|
+| key            | yes      | integer | Surrogate sequential integer key of the table |
+| company_name   | yes      | string  | Name of the company offering the job position |
+
+
+
+### Job-benefit bridge table
+
+| Attribute name | Required | Type    | Description                                              |
+|----------------|----------|---------|----------------------------------------------------------|
+| job_key        | yes      | integer | Foreign key pointing to the job_dim primary key          |
+| benefit_key    | yes      | integer | Foreign key pointing to the benefit key for the position |
+
+
+### Application Factless fact table
+
+| Attribute name | Required | Type    | Description                                           |
+|----------------|----------|---------|-------------------------------------------------------|
+| key            | yes      | integer | Surrogate sequential integer key of the table         |
+| date_key       | yes      | integer | Foreign key pointing to the date of the application   |
+| applicant_key  | yes      | integer | Foreign key pointing to the applicant id in its table |
+| company_key    | yes      | integer | Foreign key pointing to the company dimension         |
+| job_key        | yes      | integer | Foreign key pointing to the job dimension             |
+
+
+### Application-skillset bridge table
+
+| Attribute name  | Required | Type    | Description                                                               |
+|-----------------|----------|---------|---------------------------------------------------------------------------|
+| application_key | yes      | integer | Foreign key pointing to the application row in the application_fact table |
+| skill_key       | yes      | integer | Foreign key pointing to the skill of the applicant, one per row           |
 
 
 ## Dataflow explanation and diagram
 
+The workflow requires certain steps that depend on each other in order to implement de dimensional model on Amazon Redshift.
 
+First, data is extracted from the data lake in which a Spark/Scala app reads the raw json data, performs some core transformation and saves the resulting dataframe in parquet format on the stagging bucket.
+
+A calendar master data in the form of a spreadsheet is added to the stagging bucket too. This is a manual step that is perfomed once as the master date data can last for many years to come without changes. There are many business related attributes in the Calendar dimension that SQL queries can't generate automatically, so generating the calendar dim rows by hand in a spreadsheet is a common practice in dimensional modeling as stated by Kimball in his book (https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/books/data-warehouse-dw-toolkit/).  
+
+
+Then a series of spark applications written in scala do the ETL core steps to create the dimensional tables. Following the defined steps hierarchy, dimension tables are generated first, followed by the job-benefits bridge table, then the factless fact table and at last, the bridge table between the application factles fact table and the skills table. The resulting parquet files are saved in the presentation bucket.
+
+The dataflow diagram is depicted bellow.
+
+![dataflow](./images/dataflow.png)
 
 
 
