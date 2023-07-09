@@ -1,6 +1,6 @@
 
 ## DDL Commands
-
+-- Q1
 create table calendar_dim (
     date_key integer not null,
     full_date date not null,
@@ -16,6 +16,7 @@ create table calendar_dim (
     primary key(date_key)
 );
 
+-- Q2
 create view application_date_dim as
 select
     date_key as app_date_key,
@@ -31,7 +32,7 @@ select
     same_day_year_ago as app_same_day_year_ago
 from calendar_dim
 
-
+-- Q3
 create view adverts_date_dim as
 select
     date_key as advert_date_key,
@@ -47,7 +48,7 @@ select
     same_day_year_ago as advert_same_day_year_ago
 from calendar_dim
 
-
+-- Q4
 create table adverts_dim (
     key integer not null,
     id varchar(128),
@@ -58,6 +59,7 @@ create table adverts_dim (
     primary key(key)
 );
 
+-- Q5
 create table applicant_dim (
     key integer not null,
     firstName varchar(128),
@@ -67,6 +69,7 @@ create table applicant_dim (
     primary key (key)
 );
 
+-- Q6
 create table job_dim (
     key integer not null,
     job_id varchar(128),
@@ -76,25 +79,28 @@ create table job_dim (
     primary key(key)
 );
 
-
+-- Q7
 create table benefit_dim (
     key integer not null,
     benefit_name varchar(128),
     primary key(key)
 );
 
+-- Q8
 create table skill_dim (
     key integer not null,
     skill_name varchar(128),
     primary key(key)
 );
 
+-- Q9
 create table company_dim (
     key integer not null,
     company_name varchar(128),
     primary key(key)
 );
 
+-- Q10
 create table job_benefit_bridge (
     job_key integer not null,
     benefit_key integer not null,
@@ -102,6 +108,7 @@ create table job_benefit_bridge (
     foreign key(benefit_key) referencies benefit_dim(key)
 );
 
+-- Q11
 create table application_fact (
     key intenger not null,
     date_key integer not null,
@@ -115,6 +122,7 @@ create table application_fact (
     foreign key(job_key) references job_dim(key)
 );
 
+-- Q12
 create table application_skillset_bridge (
     application_key integer not null,
     skill_key integer not null
@@ -123,6 +131,58 @@ create table application_skillset_bridge (
 );
 
 
-
 ## File Copy commands
+
+COPY calendar_dim
+FROM 's3://devtestsbucket/presentation/calendar_dim'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
+
+
+COPY advert_dim
+FROM 's3://devtestsbucket/presentation/advert_dim'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
+
+COPY skill_dim
+FROM 's3://devtestsbucket/presentation/skill_dim'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
+
+COPY job_dim
+FROM 's3://devtestsbucket/presentation/job_dim'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
+
+
+COPY company_dim
+FROM 's3://devtestsbucket/presentation/company_dim'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
+
+COPY benefit_dim
+FROM 's3://devtestsbucket/presentation/benefit_dim'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
+
+
+COPY applicant_dim
+FROM 's3://devtestsbucket/presentation/applicant_dim'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
+
+COPY job_benefit_bridge
+FROM 's3://devtestsbucket/presentation/job_benefit_bridge'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
+
+COPY application_fact
+FROM 's3://devtestsbucket/presentation/application_fact'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
+
+COPY application_skillset_bridge
+FROM 's3://devtestsbucket/presentation/application_skillset_bridge'
+IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'
+FORMAT AS PARQUET;
 
